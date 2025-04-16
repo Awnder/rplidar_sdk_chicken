@@ -88,6 +88,24 @@ bool checkSLAMTECLIDARHealth(ILidarDriver * drv)
     }
 }
 
+// hardware capable PWM pins include 12, 13, 18, and 19
+// raspberry pi pin configuration is necessary before using the pin
+const int PWM_PIN = 18;
+
+void playTone(int frequency, int duration) {
+    // calculate clock for desired frequency
+    int dutyCycle = 50; // 50%
+    int clockDivisor = 192;
+    int pwmRange = 19200000 / (clockDivisor * frequency);
+
+    pwmSetMode(PWM_MODE_MS);
+    pwmSetClock(clockDivisor);
+    pwmSetRange(pwmRange);
+
+    // start pwm with desired duty cycle
+    pwmWrite(PWM_PIN, (pwmRange * dutyCycle) / 100);
+}
+
 bool ctrl_c_pressed;
 void ctrlc(int)
 {
@@ -259,6 +277,13 @@ int main(int argc, const char * argv[]) {
         goto on_finished;
     }
 
+    if (wiringPiSetupGpio() < 0) {
+        printf("Failed to initialize GPIO\n");
+        goto on_finished;
+    }
+
+    pinMode(PWM_PIN, PWM_OUTPUT);
+
     signal(SIGINT, ctrlc);
     
 	if(opt_channel_type == CHANNEL_TYPE_SERIALPORT)
@@ -276,11 +301,15 @@ int main(int argc, const char * argv[]) {
         if (SL_IS_OK(op_result)) {
             drv->ascendScanData(nodes, count);
             for (int pos = 0; pos < (int)count ; ++pos) {
-                printf("%s theta: %03.2f Dist: %08.2f Q: %d \n", 
-                    (nodes[pos].flag & SL_LIDAR_RESP_HQ_FLAG_SYNCBIT) ?"S ":"  ", 
-                    (nodes[pos].angle_z_q14 * 90.f) / 16384.f,
-                    nodes[pos].dist_mm_q2/4.0f,
-                    nodes[pos].quality >> SL_LIDAR_RESP_MEASUREMENT_QUALITY_SHIFT);
+                // distance is measured in mm
+                // play a tone or stop if no object detected
+                if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
+                    printf("close!\n");
+                    playTone(2000, 1);
+                } else {
+                    pwmWrite(PWM_PIN, 0);
+                    printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
+                }
             }
         }
 
