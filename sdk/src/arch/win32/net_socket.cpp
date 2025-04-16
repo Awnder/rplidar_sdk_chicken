@@ -649,7 +649,7 @@ public:
                 // timeout
                 return RESULT_OPERATION_TIMEOUT;
             default:
-                delay(0); //relax cpu
+                lidarDelay(0); //relax cpu
                 return RESULT_OPERATION_FAIL;
         }
     }
@@ -673,7 +673,7 @@ public:
                 // timeout
                 return RESULT_OPERATION_TIMEOUT;
             default:
-                delay(0); //relax cpu
+                lidarDelay(0); //relax cpu
                 return RESULT_OPERATION_FAIL;
         }
     }
@@ -776,7 +776,7 @@ public:
                 // timeout
                 return RESULT_OPERATION_TIMEOUT;
             default:
-                delay(0); //relax cpu
+                lidarDelay(0); //relax cpu
                 return RESULT_OPERATION_FAIL;
         }
     }
@@ -800,7 +800,7 @@ public:
                 // timeout
                 return RESULT_OPERATION_TIMEOUT;
             default:
-                delay(0); //relax cpu
+                lidarDelay(0); //relax cpu
                 return RESULT_OPERATION_FAIL;
         }
     }

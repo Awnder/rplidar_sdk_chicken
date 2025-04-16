@@ -193,7 +193,7 @@ void CMainFrame::ipConfig()
 		memcpy(network.ip, dlg.ip_, sizeof(network.ip));
 
 		//wait for LPX Lidar startup
-		delay(1000);
+		lidarDelay(1000);
 		LidarMgr::GetInstance().onDisconnect();
         if (!LidarMgr::GetInstance().onConnectUdp(network.ip, channelRecord_.network.port)) {
 		   MessageBox("Cannot bind to the udp server,please reset the lidar", "Error", MB_OK);

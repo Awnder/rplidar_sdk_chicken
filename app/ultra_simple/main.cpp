@@ -41,7 +41,7 @@
 #define delay(x)   ::Sleep(x)
 #else
 #include <unistd.h>
-static inline void delay(sl_word_size_t ms){
+static inline void lidarDelay(sl_word_size_t ms){
     while (ms>=1000){
         usleep(1000*1000);
         ms-=1000;
@@ -290,7 +290,7 @@ int main(int argc, const char * argv[]) {
     }
 
     drv->stop();
-	delay(200);
+	lidarDelay(200);
 	if(opt_channel_type == CHANNEL_TYPE_SERIALPORT)
         drv->setMotorSpeed(0);
     // done!

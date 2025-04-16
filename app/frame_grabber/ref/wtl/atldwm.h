@@ -36,7 +36,7 @@
 #pragma comment(lib, "dwmapi.lib")
 
 // Note: To create an application that also runs on older versions of Windows,
-// use delay load of dwmapi.dll and ensure that no calls to the DWM API are
+// use lidarDelay load of dwmapi.dll and ensure that no calls to the DWM API are
 // Delay load is NOT AUTOMATIC for VC++ 7, you have to link to delayimp.lib, 
 // and add dwmapi.dll in the Linker.Input.Delay Loaded DLLs section of the 
 // project properties.

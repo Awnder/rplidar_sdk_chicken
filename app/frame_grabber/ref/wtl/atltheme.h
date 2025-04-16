@@ -44,7 +44,7 @@
 #pragma comment(lib, "uxtheme.lib")
 
 // Note: To create an application that also runs on older versions of Windows,
-// use delay load of uxtheme.dll and ensure that no calls to the Theme API are
+// use lidarDelay load of uxtheme.dll and ensure that no calls to the Theme API are
 // made if theming is not supported. It is enough to check if m_hTheme is NULL.
 // Example:
 //	if(m_hTheme != NULL)

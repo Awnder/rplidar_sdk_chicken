@@ -656,7 +656,7 @@ namespace sl {
             _dataunpacker->enable();
 
             ans = _sendCommandWithoutResponse(force ? SL_LIDAR_CMD_FORCE_SCAN : SL_LIDAR_CMD_SCAN, nullptr, 0, true);
-            if (ans) delay(10); // wait rplidar to handle it
+            if (ans) lidarDelay(10); // wait rplidar to handle it
             return ans;
         }
 
@@ -755,7 +755,7 @@ namespace sl {
             scanReq.working_flags = options;
 
             ans = _sendCommandWithoutResponse(SL_LIDAR_CMD_EXPRESS_SCAN, &scanReq, sizeof(scanReq), true);
-            if (ans) delay(10); // wait rplidar to handle it
+            if (ans) lidarDelay(10); // wait rplidar to handle it
             return ans;
 
         }
@@ -772,7 +772,7 @@ namespace sl {
             if (IS_FAIL(ans)) return ans;
             
 
-            delay(100);
+            lidarDelay(100);
 
             if(_isSupportingMotorCtrl == MotorCtrlSupportPwm)
                 setMotorSpeed(0);
@@ -1006,7 +1006,7 @@ namespace sl {
 
                 ans = _sendCommandWithoutResponse(SL_LIDAR_CMD_SET_MOTOR_PWM, &motor_pwm, sizeof(motor_pwm), true);
                 if (!ans) return ans;
-                delay(10);
+                lidarDelay(10);
                 break;
             case MotorCtrlSupportRpm:
                 sl_lidar_payload_motor_pwm_t motor_rpm;
@@ -1014,7 +1014,7 @@ namespace sl {
 
                 ans = _sendCommandWithoutResponse(SL_LIDAR_CMD_HQ_MOTOR_SPEED_CTRL, &motor_rpm, sizeof(motor_rpm), true);
                 if (!ans) return ans;
-                delay(10);
+                lidarDelay(10);
                 break;
             }
             return SL_RESULT_OK;
@@ -1088,7 +1088,7 @@ namespace sl {
                 cachedChannel->flush();
 
                 // wait for a while
-                delay(10);
+                lidarDelay(10);
                 cachedChannel->clearReadCache();
 
                 // sending magic byte to let the target LIDAR start baudrate measurement

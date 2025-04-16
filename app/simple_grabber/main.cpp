@@ -40,7 +40,7 @@
 #define delay(x)   ::Sleep(x)
 #else
 #include <unistd.h>
-static inline void delay(sl_word_size_t ms){
+static inline void lidarDelay(sl_word_size_t ms){
     while (ms>=1000){
         usleep(1000*1000);
         ms-=1000;
@@ -292,7 +292,7 @@ int main(int argc, const char * argv[]) {
             break;
         }
 
-		delay(3000);
+		lidarDelay(3000);
 
         if (SL_IS_FAIL(capture_and_display(drv))) {
             fprintf(stderr, "Error, cannot grab scan data.\n");
@@ -306,7 +306,7 @@ int main(int argc, const char * argv[]) {
     switch (opt_channel_type) 
 	{	
 		case CHANNEL_TYPE_SERIALPORT:
-			delay(20);
+			lidarDelay(20);
 			drv->setMotorSpeed(0);
 		break;
 	}
