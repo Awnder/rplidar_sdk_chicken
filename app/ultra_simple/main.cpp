@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <wiringPi.h>
 
 #include "sl_lidar.h" 
 #include "sl_lidar_driver.h"
