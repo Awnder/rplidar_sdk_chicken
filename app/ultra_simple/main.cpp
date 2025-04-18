@@ -308,7 +308,7 @@ int main(int argc, const char * argv[]) {
                 // play a tone or stop if no object detected
                 if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
                     printf("close!\n");
-                    playFrequency(2000, 1);
+                    playFrequency(2000);
                 } else {
                     printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
                 }
