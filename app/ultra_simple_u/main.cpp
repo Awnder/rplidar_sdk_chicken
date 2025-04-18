@@ -92,7 +92,7 @@ bool checkSLAMTECLIDARHealth(ILidarDriver * drv)
 // raspberry pi pin configuration is necessary before using the pin
 const int PWM_PIN = 18;
 
-void playFrequency(int frequency, int duration) {
+void playFrequency(int frequency) {
     // calculate clock for desired frequency
     int clockDivisor = 192;
     int pwmRange = 19200000 / (clockDivisor * frequency);
@@ -308,7 +308,7 @@ int main(int argc, const char * argv[]) {
                 // play a tone or stop if no object detected
                 if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
                     printf("close!\n");
-                    playFrequency(2000, 1);
+                    playFrequency(40000); // 40kHz which is ultrasonic
                 } else {
                     printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
                 }

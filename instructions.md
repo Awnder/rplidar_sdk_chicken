@@ -88,6 +88,15 @@ cd debian-template
 sudo apt install wiringpi-3.0-1.deb
 ```
 
+### Running the Program
+1) Go to the `rplidar_sdk_chicken.git` directory
+```sh
+# move to directory
+cd rplidar_sdk_chicken.git
+
+# build the program
+make
+```
 
 
 ### Setting up Remote Connection
