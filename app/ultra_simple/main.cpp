@@ -92,7 +92,7 @@ bool checkSLAMTECLIDARHealth(ILidarDriver * drv)
 // raspberry pi pin configuration is necessary before using the pin
 const int PWM_PIN = 18;
 
-void playFrequency(int frequency, int duration) {
+void playFrequency(int frequency) {
     // calculate clock for desired frequency
     int clockDivisor = 192;
     int pwmRange = 19200000 / (clockDivisor * frequency);
