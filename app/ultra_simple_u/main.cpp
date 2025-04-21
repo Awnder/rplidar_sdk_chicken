@@ -104,9 +104,9 @@ void playFrequency(int frequency) {
     // start pwm with 50% duty cycle
     pwmWrite(PWM_PIN, pwmRange / 2);
 
-    delay(500); // play for 500ms
+    // delay(500); // play for 500ms
 
-    pwmWrite(PWM_PIN, 0);
+    // pwmWrite(PWM_PIN, 0);
 }
 
 bool ctrl_c_pressed;
@@ -310,6 +310,7 @@ int main(int argc, const char * argv[]) {
                     printf("close!\n");
                     playFrequency(40000); // 40kHz which is ultrasonic
                 } else {
+                    pwmWrite(PWM_PIN, 0);
                     printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
                 }
             }
