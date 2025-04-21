@@ -331,6 +331,7 @@ on_finished:
         delete drv;
         drv = NULL;
     }
+    pwmWrite(PWM_PIN, 0);
     return 0;
 }
 
