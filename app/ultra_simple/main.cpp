@@ -97,6 +97,10 @@ void playFrequency(int frequency) {
     long elapsedTime = 0;
     long duration = 500; // play for 500ms
 
+    unsigned long startTime = millis();
+    unsigned long elapsedTime = 0;
+    long duration = 250;
+
     // calculate clock for desired frequency
     int clockDivisor = 192;
     int pwmRange = 19200000 / (clockDivisor * frequency);
@@ -108,12 +112,10 @@ void playFrequency(int frequency) {
     // start pwm with 50% duty cycle
     pwmWrite(PWM_PIN, pwmRange / 2);
 
-    while (elapsedTime < duration) {
+    if (elapsedTime > duration) {
         elapsedTime = millis() - startTime;
+        pwmWrite(PWM_PIN, 0);
     }
-
-    // stop the PWM signal
-    pwmWrite(PWM_PIN, 0);
 }
 
 bool ctrl_c_pressed;
@@ -314,10 +316,9 @@ int main(int argc, const char * argv[]) {
                 // distance is measured in mm
                 // play a tone or stop if no object detected
                 if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
-                    printf("close!\n");
+                    printf("CLOSE! Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
                     playFrequency(2000);
                 } else {
-                    pwmWrite(PWM_PIN, 0);
                     printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
                 }
             }
