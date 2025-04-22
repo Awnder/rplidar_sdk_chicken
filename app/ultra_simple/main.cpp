@@ -93,6 +93,10 @@ bool checkSLAMTECLIDARHealth(ILidarDriver * drv)
 const int PWM_PIN = 18;
 
 void playFrequency(int frequency) {
+    long startTime = millis();
+    long elapsedTime = 0;
+    long duration = 500; // play for 500ms
+
     // calculate clock for desired frequency
     int clockDivisor = 192;
     int pwmRange = 19200000 / (clockDivisor * frequency);
@@ -104,9 +108,12 @@ void playFrequency(int frequency) {
     // start pwm with 50% duty cycle
     pwmWrite(PWM_PIN, pwmRange / 2);
 
-    // delay(500); // play for 500ms
+    while (elapsedTime < duration) {
+        elapsedTime = millis() - startTime;
+    }
 
-    // pwmWrite(PWM_PIN, 0);
+    // stop the PWM signal
+    pwmWrite(PWM_PIN, 0);
 }
 
 bool ctrl_c_pressed;
