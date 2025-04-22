@@ -93,13 +93,9 @@ bool checkSLAMTECLIDARHealth(ILidarDriver * drv)
 const int PWM_PIN = 18;
 
 void playFrequency(int frequency) {
-    long startTime = millis();
-    long elapsedTime = 0;
-    long duration = 500; // play for 500ms
-
     unsigned long startTime = millis();
     unsigned long elapsedTime = 0;
-    long duration = 250;
+    unsigned long duration = 250;
 
     // calculate clock for desired frequency
     int clockDivisor = 192;
@@ -314,12 +310,13 @@ int main(int argc, const char * argv[]) {
             drv->ascendScanData(nodes, count);
             for (int pos = 0; pos < (int)count ; ++pos) {
                 // distance is measured in mm
-                // play a tone or stop if no object detected
-                if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
-                    printf("CLOSE! Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
+                // check if the object is in front of the lidar (angle between 350 and 10 degrees)
+                float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14);
+                if ((angle >= 350.0f || angle <= 10.0f) && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
+                    printf("CLOSE! Dist: %02.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
                     playFrequency(2000);
                 } else {
-                    printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
+                    printf("Dist: %02.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
                 }
             }
         }
