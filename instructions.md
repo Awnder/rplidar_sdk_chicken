@@ -1,6 +1,6 @@
 # Developer Guide
 
-Welcome! This instruction file assumes no prior knowledge of this repository and is meant as a guide on how to set the project up for developers. If you are looking for developer details, go to [developers.md](./developers.md).
+Welcome! This instruction file assumes no prior knowledge of this repository and is meant as a guide on how to set the project up for users. If you are looking for developer details, go to [developers.md](./developers.md).
 
 ## Overview
 This project is split into two parts:
@@ -83,6 +83,9 @@ sudo apt install wiringpi-3.0-1.deb
 ```
 
 2) Enable hardware pulse width modulation on GPIO pins
+
+> GPIO pins can be 12, 13, 17, or 18 and must be set in `config.txt` to use them
+
 ```sh
 # config files might be in different places - check this one first
 sudo nano /boot/firmware/config.txt
@@ -103,7 +106,7 @@ sudo apt-get install git
 git clone https://github.com/awnder/rplidar_sdk_chicken.git
 ```
 
-2) Go to the `rplidar_sdk_chicken.git` directory on the Raspberry Pi or your computer
+2) Go to the `rplidar_sdk_chicken.git` directory on the Raspberry Pi
 ```sh
 # move to directory
 cd rplidar_sdk_chicken.git

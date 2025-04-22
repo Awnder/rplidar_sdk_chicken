@@ -1,9 +1,6 @@
 # Developer Guide
 
-Welcome! This instruction file assumes no prior knowledge of this repository and is meant as a guide on how to set the project up for developers. If you are looking for quick-start details, go to [instructions.md](./instructions.md).
-
-## Modifications to Original SDK
-This project changes some of the sdk to work with the lidar. This section will go over the changes so that a new developer can modify these as necessary for their project or for debugging.
+Welcome! This instruction file assumes you've set up the [project environment](./instructions.md). This file describes changes made to the SDK to work with the lidar so future developers can modify these as necessary for their project or for debugging.
 
 Modifications apply to ultra_simple (audible sound) and ultra_simple_u (ultrasonic sound).
 
