@@ -307,11 +307,8 @@ int main(int argc, const char * argv[]) {
                 // distance is measured in mm
                 // play a tone or stop if no object detected
                 if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
-                    if (nodes[pos].angle_z_q14 * 90.f / (1 << 14) >= 0.0f && 
-                        nodes[pos].angle_z_q14 * 90.f / (1 << 14) <= 90.0f) {
-                            printf("close!\n");
-                            playFrequency(2000);
-                    }
+                    printf("close!\n");
+                    playFrequency(2000);
                 } else {
                     pwmWrite(PWM_PIN, 0);
                     printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
