@@ -24,6 +24,8 @@
  *
  */
 
+#include <chrono>
+#include <thread>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -100,13 +102,10 @@ void playFrequency(int frequency) {
     pwmSetMode(PWM_MODE_MS);
     pwmSetClock(clockDivisor);
     pwmSetRange(pwmRange);
-
-    // start pwm with 50% duty cycle
     pwmWrite(PWM_PIN, pwmRange / 2);
 
-    // delay(500); // play for 500ms
-
-    // pwmWrite(PWM_PIN, 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sustain tone
+    pwmWrite(PWM_PIN, 0); // Stop after delay
 }
 
 bool ctrl_c_pressed;
@@ -305,16 +304,14 @@ int main(int argc, const char * argv[]) {
             drv->ascendScanData(nodes, count);
             for (int pos = 0; pos < (int)count ; ++pos) {
                 // distance is measured in mm
-                // play a tone or stop if no object detected
-                if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
-                    if (nodes[pos].angle_z_q14 * 90.f / (1 << 14) >= 0.0f && 
-                        nodes[pos].angle_z_q14 * 90.f / (1 << 14) <= 90.0f) {
-                            printf("close!\n");
-                            playFrequency(2000);
-                    }
+                // check if the object is in front of the lidar (angle between 350 and 10 degrees)
+                float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14);
+                if ((angle >= 350.0f || angle <= 10.0f) && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
+                    printf("CLOSE! Dist: %02.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
+                    playFrequency(2000);
                 } else {
-                    pwmWrite(PWM_PIN, 0);
-                    printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
+                    // pwmWrite(PWM_PIN, 0); // stop the buzzer
+                    printf("Dist: %02.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
                 }
             }
         }
