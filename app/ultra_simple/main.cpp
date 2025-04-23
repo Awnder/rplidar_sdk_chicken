@@ -104,14 +104,20 @@ void playFrequency(int frequency) {
     pwmSetRange(pwmRange);
     pwmWrite(PWM_PIN, pwmRange / 2);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sustain tone
+    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Sustain tone
     pwmWrite(PWM_PIN, 0); // Stop after delay
 }
 
+// debouncing timer - to prevent many quick bursts of sound
+// on many object detection making the piezo click
 auto lastDetectionTime = std::chrono::steady_clock::time_point();
+const int debounceDurationsMs = 250;
+// track last sound time in case object remains in lidar range
+auto lastSoundTime = std::chrono::steady_clock::time_point();
+const int soundDurationMs = 1000; // duration of sound in ms
+// track buzzer state and objects
 bool isBuzzerActive = false;
 bool objectDetectedInCurrentScan = false;
-const int debounceDurationsMs = 250;
 
 bool ctrl_c_pressed;
 void ctrlc(int)
@@ -323,15 +329,24 @@ int main(int argc, const char * argv[]) {
 
             // if object detected for more than debounceDurationsMs, play sound
             if (objectDetectedInCurrentScan) {
-                auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastDetectionTime).count();
-                if (!isBuzzerActive && elapsedMs >= debounceDurationsMs) {
-                    printf("CLOSE! Obj detected for %d ms\n", debounceDurationsMs);
-                    playFrequency(2000);
-                    isBuzzerActive = true;
+                auto elapsedMsSinceDetection = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastDetectionTime).count();
+                auto elapsedMsSinceSound = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastSoundTime).count();
+        
+                if (elapsedMsSinceDetection >= debounceDurationsMs) {
+                    // Object has been detected for long enough
+                    if (!isBuzzerActive || elapsedMsSinceSound >= soundDurationMs) {
+                        printf("CLOSE! Object detected for %d ms\n", debounceDurationsMs);
+                        playFrequency(2000); // Activate buzzer
+                        lastSoundTime = currentTime; // Update last sound time
+                        isBuzzerActive = true; // Mark buzzer as active
+                    }
+                } else {
+                    // Update detection time if object is still detected
+                    lastDetectionTime = currentTime;
                 }
-                lastDetectionTime = currentTime;
             } else {
-                isBuzzerActive = false; // reset buzzer state
+                // No object detected, reset buzzer state
+                isBuzzerActive = false;
             }
         }
 
