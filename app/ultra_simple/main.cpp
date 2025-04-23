@@ -317,9 +317,11 @@ int main(int argc, const char * argv[]) {
 
             for (int pos = 0; pos < (int)count ; ++pos) {
                 // distance is measured in mm
-                // check if the object is in front of the lidar (angle between 350 and 10 degrees)
-                float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14);
-                if ((angle >= 350.0f || angle <= 10.0f) && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
+                // min/max angle and min/max distance to detect must be specified,
+                // otherwise the raspberry pi has trouble keeping up with the data stream
+                float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14); // bit shift is the same as dividing by 16384
+                if ((angle >= 0.0f && angle < 360.0f) && (nodes[pos].dist_mm_q2 / 4.0f > 1.0f && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f)) {
+                    printf("CLOSE! Dist: %08.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
                     objectDetectedInCurrentScan = true;
                     break; // no check further as object already detected
                 }
