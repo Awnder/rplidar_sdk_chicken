@@ -24,6 +24,8 @@
  *
  */
 
+#include <chrono>
+#include <thread>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -100,14 +102,22 @@ void playFrequency(int frequency) {
     pwmSetMode(PWM_MODE_MS);
     pwmSetClock(clockDivisor);
     pwmSetRange(pwmRange);
-
-    // start pwm with 50% duty cycle
     pwmWrite(PWM_PIN, pwmRange / 2);
 
-    // delay(500); // play for 500ms
-
-    // pwmWrite(PWM_PIN, 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Sustain tone
+    pwmWrite(PWM_PIN, 0); // Stop after delay
 }
+
+// debouncing timer - to prevent many quick bursts of sound
+// on many object detection making the piezo click
+auto lastDetectionTime = std::chrono::steady_clock::time_point();
+const int debounceDurationsMs = 250;
+// track last sound time in case object remains in lidar range
+auto lastSoundTime = std::chrono::steady_clock::time_point();
+const int soundDurationMs = 1000; // duration of sound in ms
+// track buzzer state and objects
+bool isBuzzerActive = false;
+bool objectDetectedInCurrentScan = false;
 
 bool ctrl_c_pressed;
 void ctrlc(int)
@@ -303,16 +313,42 @@ int main(int argc, const char * argv[]) {
 
         if (SL_IS_OK(op_result)) {
             drv->ascendScanData(nodes, count);
+            objectDetectedInCurrentScan = false; // reset for scan
+
             for (int pos = 0; pos < (int)count ; ++pos) {
                 // distance is measured in mm
-                // play a tone or stop if no object detected
-                if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
-                    printf("close!\n");
-                    playFrequency(2000);
-                } else {
-                    pwmWrite(PWM_PIN, 0);
-                    printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
+                // min/max angle and min/max distance to detect must be specified,
+                // otherwise the raspberry pi has trouble keeping up with the data stream
+                float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14); // bit shift is the same as dividing by 16384
+                if ((angle >= 0.0f && angle < 360.0f) && (nodes[pos].dist_mm_q2 / 4.0f > 1.0f && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f)) {
+                    printf("CLOSE! Dist: %08.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
+                    objectDetectedInCurrentScan = true;
+                    break; // no check further as object already detected
                 }
+            }
+
+            auto currentTime = std::chrono::steady_clock::now();
+
+            // if object detected for more than debounceDurationsMs, play sound
+            if (objectDetectedInCurrentScan) {
+                auto elapsedMsSinceDetection = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastDetectionTime).count();
+                auto elapsedMsSinceSound = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastSoundTime).count();
+        
+                if (elapsedMsSinceDetection >= debounceDurationsMs) {
+                    // Object has been detected for long enough
+                    if (!isBuzzerActive || elapsedMsSinceSound >= soundDurationMs) {
+                        printf("CLOSE! Object detected for %d ms\n", debounceDurationsMs);
+                        playFrequency(2000); // Activate buzzer
+                        lastSoundTime = currentTime; // Update last sound time
+                        isBuzzerActive = true; // Mark buzzer as active
+                    }
+                } else {
+                    // Update detection time if object is still detected
+                    lastDetectionTime = currentTime;
+                }
+            } else {
+                // No object detected, reset buzzer state
+                isBuzzerActive = false;
             }
         }
 
