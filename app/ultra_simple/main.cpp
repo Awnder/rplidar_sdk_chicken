@@ -108,6 +108,11 @@ void playFrequency(int frequency) {
     pwmWrite(PWM_PIN, 0); // Stop after delay
 }
 
+auto lastDetectionTime = std::chrono::steady_clock::time_point();
+bool isBuzzerActive = false;
+bool objectDetectedInCurrentScan = false;
+const int debounceDurationsMs = 250;
+
 bool ctrl_c_pressed;
 void ctrlc(int)
 {
@@ -302,17 +307,31 @@ int main(int argc, const char * argv[]) {
 
         if (SL_IS_OK(op_result)) {
             drv->ascendScanData(nodes, count);
+            objectDetectedInCurrentScan = false; // reset for scan
+
             for (int pos = 0; pos < (int)count ; ++pos) {
                 // distance is measured in mm
                 // check if the object is in front of the lidar (angle between 350 and 10 degrees)
                 float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14);
                 if ((angle >= 350.0f || angle <= 10.0f) && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
-                    printf("CLOSE! Dist: %02.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
-                    playFrequency(2000);
-                } else {
-                    // pwmWrite(PWM_PIN, 0); // stop the buzzer
-                    printf("Dist: %02.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
+                    objectDetectedInCurrentScan = true;
+                    break; // no check further as object already detected
                 }
+            }
+
+            auto currentTime = std::chrono::steady_clock::now();
+
+            // if object detected for more than debounceDurationsMs, play sound
+            if (objectDetectedInCurrentScan) {
+                auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastDetectionTime).count();
+                if (!isBuzzerActive && elapsedMs >= debounceDurationsMs) {
+                    printf("CLOSE! Obj detected for %d ms\n", debounceDurationsMs);
+                    playFrequency(2000);
+                    isBuzzerActive = true;
+                }
+                lastDetectionTime = currentTime;
+            } else {
+                isBuzzerActive = false; // reset buzzer state
             }
         }
 
