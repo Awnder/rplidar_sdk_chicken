@@ -117,10 +117,10 @@ cd rplidar_sdk_chicken.git
 # run the program with audible frequency
 # specify port where the lidar usb is plugged into
 # specify baud rate (C1 type lidars are 460800)
-./ultra_simple --channel --serial /dev/ttyUSB0 460800
+sudo ./ultra_simple --channel --serial /dev/ttyUSB0 460800
 
 # run the program with ultrasonic frequency
-./ultra_simple --channel --serial /dev/ttyUSB0 460800
+sudo ./ultra_simple --channel --serial /dev/ttyUSB0 460800
 ```
 
 ### Setting up Remote Connection

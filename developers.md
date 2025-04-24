@@ -71,61 +71,61 @@ For example, to achieve a 100 kHz PWM frequency, divide the 19,200,000 Hz clock 
 ```cpp
 const int PWM_PIN = 18;
 
-void playFrequency(int frequency) {
+void playFrequency() {
     // calculate clock for desired frequency
+    int frequency = 2000; // Frequency in Hz
+    // int frequency = 40000; for ultrasonic 
     int clockDivisor = 192;
     int pwmRange = 19200000 / (clockDivisor * frequency);
 
     pwmSetMode(PWM_MODE_MS);
     pwmSetClock(clockDivisor);
     pwmSetRange(pwmRange);
-
-    // start pwm with 50% duty cycle
     pwmWrite(PWM_PIN, pwmRange / 2);
 
-    // delay(500); // play for 500ms
-
-    // pwmWrite(PWM_PIN, 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Sustain tone
+    pwmWrite(PWM_PIN, 0); // Stop after delay
 }
 ```
 
 ### Main Scanning Loop
 
-The lidar scans 360 degrees and detects objects within 2 meters (2000 mm).
+This loop uses a lot of variables. They are declared above main().
+
+First grab scan data from the lidar:
 ```cpp
-if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
+sl_lidar_response_measurement_node_hq_t nodes[8192];
+size_t   count = _countof(nodes);
+
+op_result = drv->grabScanDataHq(nodes, count);
+```
+
+This program uses data from 360 degrees and in between 1 mm and 2 meters (2000 mm).
+```cpp
+if (
+   (angle >= 0.0f && angle < 360.0f) 
+   && (nodes[pos].dist_mm_q2 / 4.0f > minDistance 
+   && nodes[pos].dist_mm_q2 / 4.0f < maxDistance)
+) {
+   printf("CLOSE! Dist: %08.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
+   objectDetectedInCurrentScan = true;
+   break; // no check further as object already detected
+}
 ```
 
 And `playFrequency` sounds either 2kHz or 40kHz (ultrasonic) for the `ultra_simple` or `ultra_simple_u` file respectively.
 
+After detecting an object, use debouncing to prevent frequent and often overlapping start/stop pwmWrites.
 ```cpp
-playFrequency(40000);
+if (elapsedMsSinceDetection >= debounceDurationsMs) {
 ```
 
+Finally, play a frequency every so often (timeUntilNextSoundMs is set at 1 sec)
 ```cpp
-while (1) {
-   sl_lidar_response_measurement_node_hq_t nodes[8192];
-   size_t   count = _countof(nodes);
-
-   op_result = drv->grabScanDataHq(nodes, count);
-
-   if (SL_IS_OK(op_result)) {
-      drv->ascendScanData(nodes, count);
-      for (int pos = 0; pos < (int)count ; ++pos) {
-            // distance is measured in mm
-            // play a tone or stop if no object detected
-            if (nodes[pos].dist_mm_q2 / 4.0f < 2000.0f) {
-               printf("close!\n");
-               playFrequency(40000); // 40kHz which is ultrasonic
-            } else {
-               pwmWrite(PWM_PIN, 0);
-               printf("Dist: %02.2f \n", nodes[pos].dist_mm_q2 / 4.0f);
-            }
-      }
-   }
-
-   if (ctrl_c_pressed){ 
-      break;
-   }
+if (!isBuzzerActive || elapsedMsSinceSound >= timeUntilNextSoundMs) {
+   printf("CLOSE! Object detected for %d ms\n", debounceDurationsMs);
+   playFrequency();
+   lastSoundTime = currentTime;
+   isBuzzerActive = true;
 }
 ```
