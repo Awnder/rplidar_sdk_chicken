@@ -114,7 +114,7 @@ auto lastDetectionTime = std::chrono::steady_clock::time_point();
 const int debounceDurationsMs = 250;
 // track last sound time in case object remains in lidar range
 auto lastSoundTime = std::chrono::steady_clock::time_point();
-const int soundDurationMs = 1000; // duration of sound in ms
+const int timeUntilNextSoundMs = 1000; // duration of sound in ms
 // track buzzer state and objects
 bool isBuzzerActive = false;
 bool objectDetectedInCurrentScan = false;
@@ -290,11 +290,11 @@ int main(int argc, const char * argv[]) {
         goto on_finished;
     }
 
+    // setup wiringPi and PWM pin
     if (wiringPiSetupGpio() < 0) {
         printf("Failed to initialize GPIO\n");
         goto on_finished;
     }
-
     pinMode(PWM_PIN, PWM_OUTPUT);
 
     signal(SIGINT, ctrlc);
@@ -316,10 +316,10 @@ int main(int argc, const char * argv[]) {
             objectDetectedInCurrentScan = false; // reset for scan
 
             for (int pos = 0; pos < (int)count ; ++pos) {
+                float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14); // bit shift is the same as dividing by 16384
                 // distance is measured in mm
                 // min/max angle and min/max distance to detect must be specified,
                 // otherwise the raspberry pi has trouble keeping up with the data stream
-                float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14); // bit shift is the same as dividing by 16384
                 if ((angle >= 0.0f && angle < 360.0f) && (nodes[pos].dist_mm_q2 / 4.0f > 1.0f && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f)) {
                     printf("CLOSE! Dist: %08.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
                     objectDetectedInCurrentScan = true;
@@ -334,9 +334,10 @@ int main(int argc, const char * argv[]) {
                 auto elapsedMsSinceDetection = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastDetectionTime).count();
                 auto elapsedMsSinceSound = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastSoundTime).count();
         
+                // Object has been detected for long enough
                 if (elapsedMsSinceDetection >= debounceDurationsMs) {
-                    // Object has been detected for long enough
-                    if (!isBuzzerActive || elapsedMsSinceSound >= soundDurationMs) {
+                    // plays sound if buzzer is not active or if enough time has passed since last sound
+                    if (!isBuzzerActive || elapsedMsSinceSound >= timeUntilNextSoundMs) {
                         printf("CLOSE! Object detected for %d ms\n", debounceDurationsMs);
                         playFrequency(2000); // Activate buzzer
                         lastSoundTime = currentTime; // Update last sound time
