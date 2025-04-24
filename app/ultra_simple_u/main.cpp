@@ -90,12 +90,15 @@ bool checkSLAMTECLIDARHealth(ILidarDriver * drv)
     }
 }
 
+// BUZZER VARIABLES AND FUNCTION
+
 // hardware capable PWM pins include 12, 13, 18, and 19
 // raspberry pi pin configuration is necessary before using the pin
 const int PWM_PIN = 18;
 
-void playFrequency(int frequency) {
+void playFrequency() {
     // calculate clock for desired frequency
+    int frequency = 2000; // Frequency in Hz
     int clockDivisor = 192;
     int pwmRange = 19200000 / (clockDivisor * frequency);
 
@@ -108,6 +111,8 @@ void playFrequency(int frequency) {
     pwmWrite(PWM_PIN, 0); // Stop after delay
 }
 
+// LIDAR VARIABLES
+
 // debouncing timer - to prevent many quick bursts of sound
 // on many object detection making the piezo click
 auto lastDetectionTime = std::chrono::steady_clock::time_point();
@@ -118,12 +123,16 @@ const int timeUntilNextSoundMs = 1000; // duration of sound in ms
 // track buzzer state and objects
 bool isBuzzerActive = false;
 bool objectDetectedInCurrentScan = false;
+// distance measured in mm
+const float minDistance = 1.0f;
+const float maxDistance = 2000.0f;
 
 bool ctrl_c_pressed;
 void ctrlc(int)
 {
     ctrl_c_pressed = true;
 }
+
 
 int main(int argc, const char * argv[]) {
     const char * opt_is_channel = NULL; 
@@ -137,6 +146,8 @@ int main(int argc, const char * argv[]) {
     bool useArgcBaudrate = false;
 
     IChannel* _channel;
+
+    // COMMAND LINE ARGUMENTS TO INITIALIZE LIDAR
 
     printf("Ultra simple LIDAR data grabber for SLAMTEC LIDAR.\n"
         "Version: %s\n", SL_LIDAR_SDK_VERSION);
@@ -195,6 +206,8 @@ int main(int argc, const char * argv[]) {
         }
     }
 
+    // CREATE DRIVER INSTANCE AND CONNECT TO LIDAR
+    // on failure, exit gracefully to on_finished
     
     // create the driver instance
     ILidarDriver * drv = *createLidarDriver();
@@ -270,6 +283,8 @@ int main(int argc, const char * argv[]) {
         goto on_finished;
     }
 
+    // SUCCESSFULLY CONNECTED TO LIDAR -> START PROGRAM
+
     // print out the device serial number, firmware and hardware version number..
     printf("SLAMTEC LIDAR S/N: ");
     for (int pos = 0; pos < 16 ;++pos) {
@@ -283,7 +298,8 @@ int main(int argc, const char * argv[]) {
             , devinfo.firmware_version & 0xFF
             , (int)devinfo.hardware_version);
 
-
+    
+    // CHECK LIDAR HEALTH AND SETUP PWM PIN
 
     // check health...
     if (!checkSLAMTECLIDARHealth(drv)) {
@@ -297,6 +313,7 @@ int main(int argc, const char * argv[]) {
     }
     pinMode(PWM_PIN, PWM_OUTPUT);
 
+    // setup listener to exit program on Ctrl-C
     signal(SIGINT, ctrlc);
     
     if(opt_channel_type == CHANNEL_TYPE_SERIALPORT)
@@ -304,7 +321,7 @@ int main(int argc, const char * argv[]) {
     // start scan...
     drv->startScan(0,1);
 
-    // fetech result and print it out...
+    // fetch result and print it out, continues until Ctrl-C
     while (1) {
         sl_lidar_response_measurement_node_hq_t nodes[8192];
         size_t   count = _countof(nodes);
@@ -317,10 +334,10 @@ int main(int argc, const char * argv[]) {
 
             for (int pos = 0; pos < (int)count ; ++pos) {
                 float angle = nodes[pos].angle_z_q14 * 90.f / (1 << 14); // bit shift is the same as dividing by 16384
-                // distance is measured in mm
+                // distance is measured in mm and angle is measured in degrees
                 // min/max angle and min/max distance to detect must be specified,
                 // otherwise the raspberry pi has trouble keeping up with the data stream
-                if ((angle >= 0.0f && angle < 360.0f) && (nodes[pos].dist_mm_q2 / 4.0f > 1.0f && nodes[pos].dist_mm_q2 / 4.0f < 2000.0f)) {
+                if ((angle >= 0.0f && angle < 360.0f) && (nodes[pos].dist_mm_q2 / 4.0f > minDistance && nodes[pos].dist_mm_q2 / 4.0f < maxDistance)) {
                     printf("CLOSE! Dist: %08.2f Angle: %02.2f\n", nodes[pos].dist_mm_q2 / 4.0f, angle);
                     objectDetectedInCurrentScan = true;
                     break; // no check further as object already detected
@@ -339,16 +356,16 @@ int main(int argc, const char * argv[]) {
                     // plays sound if buzzer is not active or if enough time has passed since last sound
                     if (!isBuzzerActive || elapsedMsSinceSound >= timeUntilNextSoundMs) {
                         printf("CLOSE! Object detected for %d ms\n", debounceDurationsMs);
-                        playFrequency(2000); // Activate buzzer
-                        lastSoundTime = currentTime; // Update last sound time
-                        isBuzzerActive = true; // Mark buzzer as active
+                        playFrequency();
+                        lastSoundTime = currentTime;
+                        isBuzzerActive = true;
                     }
                 } else {
                     // Update detection time if object is still detected
                     lastDetectionTime = currentTime;
                 }
             } else {
-                // No object detected, reset buzzer state
+                // reset buzzer state if no object detected for debounce duration
                 isBuzzerActive = false;
             }
         }
