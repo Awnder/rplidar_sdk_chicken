@@ -1,36 +1,37 @@
-import RPi.GPIO as GPIO
+from gpiozero import Button
 import subprocess
-import sys
-import time
 
-# Configuration
-BUTTON_PIN = 10  # GPIO pin for button
-SCRIPT_PATH = "./ultra_simple_u"  # Path to the script to run
+# global var to store process ref
+process = None
 
-# Button press handler
+# Configuration (BCM numbering)
+BUTTON_PIN = 17  # GPIO 17 (BCM)
+SCRIPT_PATH = "./ultra_simple_u"
+HOLD_TIME = 3  # Seconds to hold for exit
 
-def button_callback(channel):
-    start_time = time.time()
-    while GPIO.input(channel):  # While button held
-        if time.time() - start_time > 3:  # 3-second hold
-            print("Exiting...")
-            GPIO.cleanup()
+def run_script():
+    print("Button pressed - executing script")
+    process = subprocess.Popen(["sudo", SCRIPT_PATH, "--channel", "--serial", "/dev/ttyUSB0", "460800"], check=True)
+
+def exit_script():
+    global process
+    if process and process.poll() is None:
+        print("Button held - exiting script")
+        process.terminate()
+        process.wait()
+        process = None
+        print("Script terminated")
+    else:
+        print("No script running to terminate")
     
-    # Normal press
-    subprocess.run(["sudo", SCRIPT_PATH, "--channel", "--serial", "/dev/ttyUSB0", "460800"])
+# Set up button with pull-down resistor
+button = Button(BUTTON_PIN, pull_up=False, hold_time=HOLD_TIME)
+button.when_pressed = run_script
+button.when_held = exit_script
 
-# Setup GPIO
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-
-# Attach event detectors
-GPIO.add_event_detect(BUTTON_PIN, GPIO.RISING, callback=button_callback, bouncetime=300)
-
-# Keep alive
-print("Ready - Press button quickly to run script, press and hold for 3 seconds to exit")
+print("Press button to run script (CTRL+C to exit)")
 try:
     while True:
-        pass
+        pass  # Keep program running
 except KeyboardInterrupt:
-    GPIO.cleanup()
+    button.close()
