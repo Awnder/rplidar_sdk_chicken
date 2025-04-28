@@ -4,6 +4,9 @@ Welcome! This instruction file assumes you've set up the [project environment](.
 
 Modifications apply to ultra_simple (audible sound) and ultra_simple_u (ultrasonic sound).
 
+### Making the Program
+If you make changes to the files and want to compile the binaries, navigate to the root of the sdk and type `make` to build the sdk and code files. This will compile the code into `output/Linux/`.
+
 ### Wiring Pi
 
 1) Including wiringPi in the header:

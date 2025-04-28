@@ -1,4 +1,4 @@
-# Developer Guide
+# Instruction Guide
 
 Welcome! This instruction file assumes no prior knowledge of this repository and is meant as a guide on how to set the project up for users. If you are looking for developer details, go to [developers.md](./developers.md).
 
