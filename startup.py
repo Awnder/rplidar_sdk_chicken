@@ -1,4 +1,4 @@
-from gpiozero import Button
+import gpiod
 import subprocess
 
 # global var to store process ref
@@ -8,6 +8,17 @@ process = None
 BUTTON_PIN = 17  # GPIO 17 (BCM)
 SCRIPT_PATH = "./ultra_simple_u"
 HOLD_TIME = 3  # Seconds to hold for exit
+CHIP_NAME = "gpiochip4" # Pi 5 uses this
+
+chip = gpiod.Chip(CHIP_NAME)
+button_line = chip.get_line(BUTTON_PIN)
+
+# Configure button as input with pull-down
+button_line.request(
+    consumer="button",
+    type=gpiod.LINE_REQ_EV_BOTH_EDGES,  # Detect presses and releases
+    flags=gpiod.LINE_REQ_FLAG_BIAS_PULL_DOWN
+)
 
 def run_script():
     print("Button pressed - executing script")
@@ -23,15 +34,18 @@ def exit_script():
         print("Script terminated")
     else:
         print("No script running to terminate")
-    
-# Set up button with pull-down resistor
-button = Button(BUTTON_PIN, pull_up=False, hold_time=HOLD_TIME)
-button.when_pressed = run_script
-button.when_held = exit_script
 
 print("Press button to run script (CTRL+C to exit)")
 try:
     while True:
+        if button_line.event_wait(timeout=1):
+            event = button_line.event_read()
+            if event.event_type == gpiod.LINE_EVENT_RISING_EDGE:
+                run_script()
+            elif event.event_type == gpiod.LINE_EVENT_FALLING_EDGE:
+                # Check if button is held for exit
+                if event.timestamp - event.timestamp > HOLD_TIME:
+                    exit_script()
         pass  # Keep program running
 except KeyboardInterrupt:
-    button.close()
+    button_line.release()
