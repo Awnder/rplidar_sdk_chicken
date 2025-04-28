@@ -38,7 +38,7 @@ def exit_script():
 print("Press button to run script (CTRL+C to exit)")
 try:
     while True:
-        if button_line.event_wait(timeout=1):
+        if button_line.event_wait(1):
             event = button_line.event_read()
             if event.event_type == gpiod.LINE_EVENT_RISING_EDGE:
                 run_script()
