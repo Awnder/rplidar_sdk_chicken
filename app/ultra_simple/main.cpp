@@ -357,8 +357,8 @@ int main(int argc, const char * argv[]) {
                     // plays sound if buzzer is not active or if enough time has passed since last sound
                     if (!isBuzzerActive || elapsedMsSinceSound >= timeUntilNextSoundMs) {
                         printf("CLOSE! Object detected for %d ms\n", debounceDurationsMs);
-                        playFrequency(2000, 18);
-                        playFrequency(40000, 19);
+                        playFrequency(2000, PWM_PIN);
+                        playFrequency(40000, PWM_PIN_U);
                         lastSoundTime = currentTime;
                         isBuzzerActive = true;
                     }
