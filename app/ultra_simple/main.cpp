@@ -95,20 +95,20 @@ bool checkSLAMTECLIDARHealth(ILidarDriver * drv)
 // hardware capable PWM pins include 12, 13, 18, and 19
 // raspberry pi pin configuration is necessary before using the pin
 const int PWM_PIN = 18;
+const int PWM_PIN_U = 19;
 
-void playFrequency() {
+void playFrequency(int frequency, int pin) {
     // calculate clock for desired frequency
-    int frequency = 2000; // Frequency in Hz
     int clockDivisor = 192;
     int pwmRange = 19200000 / (clockDivisor * frequency);
 
     pwmSetMode(PWM_MODE_MS);
     pwmSetClock(clockDivisor);
     pwmSetRange(pwmRange);
-    pwmWrite(PWM_PIN, pwmRange / 2);
+    pwmWrite(pin, pwmRange / 2);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Sustain tone
-    pwmWrite(PWM_PIN, 0); // Stop after delay
+    pwmWrite(pin, 0); // Stop after delay
 }
 
 // LIDAR VARIABLES
@@ -312,6 +312,7 @@ int main(int argc, const char * argv[]) {
         goto on_finished;
     }
     pinMode(PWM_PIN, PWM_OUTPUT);
+    pinMode(PWM_PIN_U, PWM_OUTPUT);
 
     // setup listener to exit program on Ctrl-C
     signal(SIGINT, ctrlc);
@@ -356,7 +357,8 @@ int main(int argc, const char * argv[]) {
                     // plays sound if buzzer is not active or if enough time has passed since last sound
                     if (!isBuzzerActive || elapsedMsSinceSound >= timeUntilNextSoundMs) {
                         printf("CLOSE! Object detected for %d ms\n", debounceDurationsMs);
-                        playFrequency();
+                        playFrequency(2000, 18);
+                        playFrequency(40000, 19);
                         lastSoundTime = currentTime;
                         isBuzzerActive = true;
                     }
@@ -386,5 +388,6 @@ on_finished:
         drv = NULL;
     }
     pwmWrite(PWM_PIN, 0);
+    pwmWrite(PWM_PIN_U, 0);
     return 0;
 }
